@@ -12,7 +12,8 @@ class BinaryOp;
 class Assignment;
 class Declaration;
 
-class ASTVisitor {
+class ASTVisitor
+{
 public:
   virtual void visit(AST &){};
   virtual void visit(Expr &){};
@@ -23,38 +24,49 @@ public:
   virtual void visit(Declaration &) = 0;
 };
 
-class AST {
+class AST
+{
 public:
   virtual ~AST() {}
   virtual void accept(ASTVisitor &V) = 0;
 };
 
-class Expr : public AST {
+class Expr : public AST
+{
 public:
   Expr() {}
 };
 
-class GSM : public Expr {
+class GSM : public Expr
+{
+  using ExprVector = llvm::SmallVector<Expr *>;
+
 private:
-  llvm::SmallVector<Expr> exprs;
+  ExprVector exprs;
 
 public:
-  GSM(llvm::SmallVector<Expr *> exprs) : exprs(epxrs) {}
+  GSM(llvm::SmallVector<Expr *> exprs) : exprs(exprs) {}
 
   llvm::SmallVector<Expr *> getExprs() { return exprs; }
 
-  VarVector::const_iterator begin() { return exprs.begin(); }
+  ExprVector::const_iterator begin() { return exprs.begin(); }
 
-  VarVector::const_iterator end() { return exprs.end(); }
+  ExprVector::const_iterator end() { return exprs.end(); }
 
-  virtual void accept(ASTVisitor &V) override {
+  virtual void accept(ASTVisitor &V) override
+  {
     V.visit(*this);
   }
 };
 
-class Factor : public Expr {
+class Factor : public Expr
+{
 public:
-  enum ValueKind { Ident, Number };
+  enum ValueKind
+  {
+    Ident,
+    Number
+  };
 
 private:
   ValueKind Kind;
@@ -67,14 +79,22 @@ public:
 
   llvm::StringRef getVal() { return Val; }
 
-  virtual void accept(ASTVisitor &V) override {
+  virtual void accept(ASTVisitor &V) override
+  {
     V.visit(*this);
   }
 };
 
-class BinaryOp : public Expr {
+class BinaryOp : public Expr
+{
 public:
-  enum Operator { Plus, Minus, Mul, Div };
+  enum Operator
+  {
+    Plus,
+    Minus,
+    Mul,
+    Div
+  };
 
 private:
   Expr *Left;
@@ -90,12 +110,14 @@ public:
 
   Operator getOperator() { return Op; }
 
-  virtual void accept(ASTVisitor &V) override {
+  virtual void accept(ASTVisitor &V) override
+  {
     V.visit(*this);
   }
 };
 
-class Assignment : public Expr {
+class Assignment : public Expr
+{
 private:
   Factor *Left;
   Expr *Right;
@@ -107,12 +129,14 @@ public:
 
   Expr *getRight() { return Right; }
 
-  virtual void accept(ASTVisitor &V) override {
+  virtual void accept(ASTVisitor &V) override
+  {
     V.visit(*this);
   }
 };
 
-class Declaration : public AST {
+class Declaration : public Expr
+{
   using VarVector = llvm::SmallVector<llvm::StringRef, 8>;
   VarVector Vars;
   Expr *E;
@@ -126,7 +150,8 @@ public:
 
   Expr *getExpr() { return E; }
 
-  virtual void accept(ASTVisitor &V) override {
+  virtual void accept(ASTVisitor &V) override
+  {
     V.visit(*this);
   }
 };

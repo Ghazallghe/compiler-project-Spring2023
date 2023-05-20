@@ -4,7 +4,6 @@
 AST *Parser::parse()
 {
     AST *Res = parseGSM();
-    expect(Token::eoi);
     return Res;
 }
 
@@ -16,7 +15,7 @@ AST *Parser::parseGSM()
         switch (Tok.getKind())
         {
         case Token::KW_type:
-            Declaration d;
+            Expr *d;
             d = parseDec();
             if (d)
                 exprs.push_back(d);
@@ -24,15 +23,22 @@ AST *Parser::parseGSM()
                 goto _error2;
             break;
         case Token::ident:
-            Assignment a;
+            Expr *a;
             a = parseAssign();
+
+            if (!Tok.is(Token::semicolon))
+            {
+                error();
+                goto _error2;
+            }
             if (a)
                 exprs.push_back(a);
             else
                 goto _error2;
-            expr.push_back(a);
+            break;
         default:
-            goto _error2 break;
+            goto _error2;
+            break;
         }
         advance(); // TODO: watch this part
     }
@@ -70,13 +76,12 @@ Expr *Parser::parseDec()
         advance();
     }
 
-    if (!expect(Token::equal))
+    if (Tok.is(Token::equal))
     {
         advance();
         E = parseExpr();
     }
 
-    advance();
     if (expect(Token::semicolon))
         goto _error;
 
@@ -91,11 +96,9 @@ Expr *Parser::parseAssign()
 {
     Expr *E;
     Factor *F;
+    F = (Factor *)(parseFactor());
 
-    F = parseFactor();
-
-    advance();
-    if (expect(Token::equal))
+    if (!Tok.is(Token::equal))
     {
         error();
         return nullptr;
@@ -123,7 +126,7 @@ Expr *Parser::parseExpr()
 Expr *Parser::parseTerm()
 {
     Expr *Left = parseFactor();
-    while (Tok.isOneOf(Token::star, Toke::slash))
+    while (Tok.isOneOf(Token::star, Token::slash))
     {
         BinaryOp::Operator Op =
             Tok.is(Token::star) ? BinaryOp::Mul : BinaryOp::Div;

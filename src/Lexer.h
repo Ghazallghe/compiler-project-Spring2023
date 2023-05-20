@@ -25,7 +25,7 @@ public:
         star,
         slash,
         l_paren,
-        r_parent,
+        r_paren,
         KW_type,
         KW_int
     };
