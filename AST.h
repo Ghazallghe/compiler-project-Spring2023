@@ -39,9 +39,14 @@ private:
   llvm::SmallVector<Expr> exprs;
 
 public:
-  GSM(llvm::SmallVector<Expr *> exprs)
-      : exprs(epxrs) {}
+  GSM(llvm::SmallVector<Expr *> exprs) : exprs(epxrs) {}
+
   llvm::SmallVector<Expr *> getExprs() { return exprs; }
+
+  VarVector::const_iterator begin() { return exprs.begin(); }
+
+  VarVector::const_iterator end() { return exprs.end(); }
+
   virtual void accept(ASTVisitor &V) override {
     V.visit(*this);
   }
@@ -56,10 +61,12 @@ private:
   llvm::StringRef Val;
 
 public:
-  Factor(ValueKind Kind, llvm::StringRef Val)
-      : Kind(Kind), Val(Val) {}
+  Factor(ValueKind Kind, llvm::StringRef Val) : Kind(Kind), Val(Val) {}
+
   ValueKind getKind() { return Kind; }
+
   llvm::StringRef getVal() { return Val; }
+
   virtual void accept(ASTVisitor &V) override {
     V.visit(*this);
   }
@@ -75,11 +82,14 @@ private:
   Operator Op;
 
 public:
-  BinaryOp(Operator Op, Expr *L, Expr *R)
-      : Op(Op), Left(L), Right(R) {}
+  BinaryOp(Operator Op, Expr *L, Expr *R) : Op(Op), Left(L), Right(R) {}
+
   Expr *getLeft() { return Left; }
+
   Expr *getRight() { return Right; }
+
   Operator getOperator() { return Op; }
+
   virtual void accept(ASTVisitor &V) override {
     V.visit(*this);
   }
@@ -91,10 +101,12 @@ private:
   Expr *Right;
 
 public:
-  BinaryOp(Factor *L, Expr *R)
-      : Left(L), Right(R) {}
+  Assignment(Factor *L, Expr *R) : Left(L), Right(R) {}
+
   Factor *getLeft() { return Left; }
+
   Expr *getRight() { return Right; }
+
   virtual void accept(ASTVisitor &V) override {
     V.visit(*this);
   }
@@ -106,12 +118,14 @@ class Declaration : public AST {
   Expr *E;
 
 public:
-  Declaration(llvm::SmallVector<llvm::StringRef, 8> Vars,
-           Expr *E)
-      : Vars(Vars), E(E) {}
+  Declaration(llvm::SmallVector<llvm::StringRef, 8> Vars, Expr *E) : Vars(Vars), E(E) {}
+
   VarVector::const_iterator begin() { return Vars.begin(); }
+
   VarVector::const_iterator end() { return Vars.end(); }
+
   Expr *getExpr() { return E; }
+
   virtual void accept(ASTVisitor &V) override {
     V.visit(*this);
   }
