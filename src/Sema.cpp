@@ -10,7 +10,7 @@ class InputCheck : public ASTVisitor {
   enum ErrorType { Twice, Not };
 
   void error(ErrorType ET, llvm::StringRef V) {
-    llvm::errs() << "Variable " << V << " "
+    llvm::errs() << "Variable " << V << " is "
                  << (ET == Twice ? "already" : "not")
                  << " declared\n";
     HasError = true;
@@ -21,7 +21,12 @@ public:
 
   bool hasError() { return HasError; }
 
-  virtual void visit(GSM &Node) override { };
+  virtual void visit(GSM &Node) override { 
+    for (auto I = Node.begin(), E = Node.end(); I != E; ++I)
+    {
+      (*I)->accept(*this);
+    }
+  };
 
   virtual void visit(Factor &Node) override {
     if (Node.getKind() == Factor::Ident) {
@@ -35,10 +40,26 @@ public:
       Node.getLeft()->accept(*this);
     else
       HasError = true;
-    if (Node.getRight())
-      Node.getRight()->accept(*this);
+
+    auto right = Node.getRight();
+    if (right)
+      right->accept(*this);
     else
       HasError = true;
+
+    if (Node.getOperator() == BinaryOp::Operator::Div && right) {
+      Factor * f = (Factor *)right;
+
+      if (right && f->getKind() == Factor::ValueKind::Number) {
+        int intval;
+        f->getVal().getAsInteger(10, intval);
+
+        if (intval == 0) {
+          llvm::errs() << "Division by zero is not allowed." << "\n";
+          HasError = true;
+        }
+      }
+    }
   };
 
   virtual void visit(Assignment &Node) override {
@@ -77,6 +98,7 @@ public:
 bool Sema::semantic(AST *Tree) {
   if (!Tree)
     return false;
+
   InputCheck Check;
   Tree->accept(Check);
   return Check.hasError();
