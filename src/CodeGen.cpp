@@ -19,7 +19,7 @@ namespace
     Constant *Int32Zero;
 
     Value *V;
-    StringMap<Value *> nameMap;
+    StringMap<AllocaInst *> nameMap;
 
   public:
     ToIRVisitor(Module *M) : M(M), Builder(M->getContext())
@@ -41,6 +41,7 @@ namespace
 
       Tree->accept(*this);
 
+
       Builder.CreateRet(Int32Zero);
     }
 
@@ -59,13 +60,18 @@ namespace
 
       auto varName = Node.getLeft()->getVal();
       Builder.CreateStore(val, nameMap[varName]);
+
+      FunctionType *CalcWriteFnTy = FunctionType::get(VoidTy, {Int32Ty}, false);
+      Function *CalcWriteFn = Function::Create(CalcWriteFnTy, GlobalValue::ExternalLinkage, "gsm_write", M);
+
+      CallInst *Call = Builder.CreateCall(CalcWriteFnTy, CalcWriteFn, {val});
     };
 
     virtual void visit(Factor &Node) override
     {
       if (Node.getKind() == Factor::Ident)
       {
-        V = nameMap[Node.getVal()];
+        V = Builder.CreateLoad(Int32Ty, nameMap[Node.getVal()]);
       }
       else
       {
