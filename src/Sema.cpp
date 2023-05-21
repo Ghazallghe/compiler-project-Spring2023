@@ -89,8 +89,6 @@ public:
     }
     if (Node.getExpr())
       Node.getExpr()->accept(*this);
-    else
-      HasError = true;
   };
 };
 }
