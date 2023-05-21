@@ -57,14 +57,8 @@ namespace
       Node.getRight()->accept(*this);
       Value *val = V;
 
-      FunctionType *CalcWriteFnTy = FunctionType::get(VoidTy, {Int32Ty}, false);
-      Function *CalcWriteFn = Function::Create(CalcWriteFnTy, GlobalValue::ExternalLinkage, "gsm_write", M);
-
-      CallInst *Call = Builder.CreateCall(CalcWriteFnTy, CalcWriteFn, {val});
-
       auto varName = Node.getLeft()->getVal();
-
-      nameMap[varName] = val;
+      Builder.CreateStore(val, nameMap[varName]);
     };
 
     virtual void visit(Factor &Node) override
@@ -106,36 +100,21 @@ namespace
 
     virtual void visit(Declaration &Node) override
     {
-      FunctionType *ReadFty = FunctionType::get(Int32Ty, {Int8PtrTy}, false);
-      Function *ReadFn = Function::Create(ReadFty, GlobalValue::ExternalLinkage, "gsm_read", M);
+      Value *val = NULL;
+
+      if (Node.getExpr()) { 
+        Node.getExpr()->accept(*this);
+        val = V;
+      }
 
       for (auto I = Node.begin(), E = Node.end(); I != E; ++I)
       {
         StringRef Var = *I;
 
-        // Create call to gsm_read function.
-        Constant *StrText = ConstantDataArray::getString(M->getContext(), Var);
-
-        GlobalVariable *Str = new GlobalVariable(
-            *M,
-            StrText->getType(),
-            true, /*isConstant*/
-            GlobalValue::PrivateLinkage,
-            StrText,
-            Twine(Var).concat(".str"));
-
-        Value *Ptr = Builder.CreateInBoundsGEP(Str->getType(), Str, {Int32Zero, Int32Zero}, "ptr");
-        CallInst *Call = Builder.CreateCall(ReadFty, ReadFn, {Ptr});
-
-        nameMap[Var] = Call;
-      }
-
-      if (Node.getExpr()) {
-        Node.getExpr()->accept(*this);
-        FunctionType *CalcWriteFnTy = FunctionType::get(VoidTy, {Int32Ty}, false);
-        Function *CalcWriteFn = Function::Create(CalcWriteFnTy, GlobalValue::ExternalLinkage, "gsm_write", M);
-
-        CallInst *Call = Builder.CreateCall(CalcWriteFnTy, CalcWriteFn, {V});
+        nameMap[Var] = Builder.CreateAlloca(Int32Ty);
+        if (val != NULL) {
+          Builder.CreateStore(val, nameMap[Var]);
+        }
       }
     };
   };
