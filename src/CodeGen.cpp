@@ -41,10 +41,6 @@ namespace
 
       Tree->accept(*this);
 
-      FunctionType *CalcWriteFnTy = FunctionType::get(VoidTy, {Int32Ty}, false);
-      Function *CalcWriteFn = Function::Create(CalcWriteFnTy, GlobalValue::ExternalLinkage, "gsm_write", M);
-      // Builder.CreateCall(CalcWriteFnTy, CalcWriteFn, {V});
-
       Builder.CreateRet(Int32Zero);
     }
 
@@ -60,6 +56,11 @@ namespace
     {
       Node.getRight()->accept(*this);
       Value *val = V;
+
+      FunctionType *CalcWriteFnTy = FunctionType::get(VoidTy, {Int32Ty}, false);
+      Function *CalcWriteFn = Function::Create(CalcWriteFnTy, GlobalValue::ExternalLinkage, "gsm_write", M);
+
+      CallInst *Call = Builder.CreateCall(CalcWriteFnTy, CalcWriteFn, {val});
 
       auto varName = Node.getLeft()->getVal();
 
@@ -105,9 +106,9 @@ namespace
 
     virtual void visit(Declaration &Node) override
     {
-
       FunctionType *ReadFty = FunctionType::get(Int32Ty, {Int8PtrTy}, false);
       Function *ReadFn = Function::Create(ReadFty, GlobalValue::ExternalLinkage, "gsm_read", M);
+
       for (auto I = Node.begin(), E = Node.end(); I != E; ++I)
       {
         StringRef Var = *I;
@@ -129,8 +130,13 @@ namespace
         nameMap[Var] = Call;
       }
 
-      if (Node.getExpr())
+      if (Node.getExpr()) {
         Node.getExpr()->accept(*this);
+        FunctionType *CalcWriteFnTy = FunctionType::get(VoidTy, {Int32Ty}, false);
+        Function *CalcWriteFn = Function::Create(CalcWriteFnTy, GlobalValue::ExternalLinkage, "gsm_write", M);
+
+        CallInst *Call = Builder.CreateCall(CalcWriteFnTy, CalcWriteFn, {V});
+      }
     };
   };
 } // namespace
