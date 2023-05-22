@@ -154,8 +154,8 @@ namespace
         }
       }
     };
-  }
-} // namespace
+  };
+}; // namespace
 
 void CodeGen::compile(AST *Tree)
 {
